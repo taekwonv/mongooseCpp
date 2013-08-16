@@ -24,9 +24,23 @@
 class MgRequest
 {
 public:
+	int read(char *buf, size_t len);
+	std::string requestMethod() const;	// "GET", "POST", etc
+	std::string uri() const;			// URL-decoded URI
+	std::string httpVersion() const;	// E.g. "1.0", "1.1"
+	std::string queryString() const;	// URL part after '?', not including '?', or NULL
+	std::string remoteUser() const;		// Authenticated user, or NULL if no auth used
+	long remoteIP() const;				// Client's IP address
+	int remotePort() const;				// Client's port
+	int is_ssl() const;					// 1 if SSL-ed, 0 if not
+	
+	MgRequest(mg_connection *con);
 
 protected:
 	mg_connection *m_connection;
+
+private:
+	MgRequest() {}
 };
 
 
@@ -75,10 +89,38 @@ public:
 	~MgServer(void);
 
 	void stop();
-	void listen(std::function<void(MgRequest *req, MgResponse *res)> f) { m_listener = f; }
+	void listen(std::function<int(MgRequest *req, MgResponse *res)> f) { m_listener = f; }
 
 protected:
-	std::function<void(MgRequest *req, MgResponse *res)> m_listener;
+	std::function<int(MgRequest *req, MgResponse *res)> m_listener;
+};
+
+
+/**
+ *	MongooseCpp
+ *
+ *	The entry point of MongooseCpp.
+ *
+ */
+struct MongooseCpp
+{
+	struct ServerConfig
+	{
+		unsigned short port;
+	};
+	static MgServer *createServer(ServerConfig &cfg);
+
+	struct RequestInfo
+	{
+		std::string	destAddr;		
+		std::string method; // POST or GET
+		std::string httpVersion; // ex) HTTP/1.1
+		std::string uri;
+		std::string data;
+		unsigned short port;
+		bool usessl;
+	};
+	static MgRequest *request(RequestInfo &);
 };
 
 
@@ -114,15 +156,4 @@ public:
 protected:
 	mg_context *m_ctx;
 };
-
-
-struct MongooseCpp
-{
-	struct Config
-	{
-		unsigned short port;
-	};
-	static MgServer *CreateServer(Config &cfg);
-};
-
 #endif

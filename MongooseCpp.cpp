@@ -8,22 +8,26 @@
  */
 
 #include "MongooseCpp.h"
-
+using namespace std;
 
 
 MgServer::MgServer(void) : m_listener(NULL) {}
 
 MgServer::~MgServer(void) {}
 
-MgServer *MongooseCpp::CreateServer(MongooseCpp::Config &cfg)
+MgServer *MongooseCpp::createServer(MongooseCpp::ServerConfig &cfg)
 {
 	MgServerImpl *server = new MgServerImpl;
 	
 	const char *options[] = {
 		"document_root", "html",
-		"listening_ports", "8080",
+		"listening_ports", "80",
 		NULL
 	};
+	char buf[16];
+	memset(buf, '\0', sizeof(buf));
+	_itoa(cfg.port, buf, 10);
+	options[3] = buf;
 
 	mg_context *ctx = mg_start(server, server, options);
 	if (NULL == ctx)
@@ -35,6 +39,25 @@ MgServer *MongooseCpp::CreateServer(MongooseCpp::Config &cfg)
 	server->context(ctx);
 
 	return server;
+}
+
+MgRequest *MongooseCpp::request(RequestInfo &info)
+{
+	char errbuf[1024];
+	mg_connection *con = mg_download(info.destAddr.c_str(), info.port, info.usessl ? 1 : 0, errbuf, sizeof(errbuf), 
+		"%s %s %s\r\n"
+		"Host: %s\r\n"
+		"Content-Length: %d\r\n"
+		"\r\n"
+		"%s",
+		info.method.c_str(), info.uri.c_str(), info.httpVersion.c_str(),
+		info.destAddr.c_str(),
+		info.data.length(),
+		info.data.c_str());
+
+	if (NULL == con) return NULL;
+
+	return new MgRequest(con);
 }
 
 
@@ -150,8 +173,8 @@ int MgServerImpl::member_begin_request(struct mg_connection *con)
 	{
 		mg_request_info *info = mg_get_request_info(con);
 		MgResponse *res = new MgResponse(con);
-		MgRequest *req = new MgRequest;
-		m_listener(req, res);
+		MgRequest *req = new MgRequest(con);
+		return m_listener(req, res);
 	}
 	return 0;
 }
@@ -247,4 +270,72 @@ void MgResponse::write(const std::string &content)
 void MgResponse::end()
 {
 	mg_printf(m_connection, "");
+}
+
+
+                                         
+/**
+ *  _____     _____                     _   
+ * |     |___| __  |___ ___ _ _ ___ ___| |_ 
+ * | | | | . |    -| -_| . | | | -_|_ -|  _|
+ * |_|_|_|_  |__|__|___|_  |___|___|___|_|  
+ *       |___|           |_|                
+ */
+
+MgRequest::MgRequest(mg_connection *con)
+	: m_connection(con)
+{
+}
+
+int MgRequest::read(char *buf, size_t len)
+{
+	return mg_read(m_connection, buf, len);
+}
+
+std::string MgRequest::requestMethod() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->request_method;
+	return "";
+}
+
+std::string MgRequest::uri() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->uri;
+	return "";
+}
+
+std::string MgRequest::httpVersion() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->http_version;
+	return "";
+}
+
+std::string MgRequest::queryString() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->query_string;
+	return "";
+}
+
+std::string MgRequest::remoteUser() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->remote_user;
+	return "";
+}
+
+long MgRequest::remoteIP() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->remote_ip;
+	return 0;
+}
+
+int MgRequest::remotePort() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->remote_port;
+	return -1;
+}
+
+int MgRequest::is_ssl() const
+{
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->is_ssl;
+	return -1;
 }
