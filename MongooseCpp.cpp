@@ -294,31 +294,31 @@ int MgRequest::read(char *buf, size_t len)
 
 std::string MgRequest::requestMethod() const
 {
-	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->request_method;
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->request_method == NULL ? "" : info->request_method;
 	return "";
 }
 
 std::string MgRequest::uri() const
 {
-	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->uri;
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->uri == NULL ? "" : info->uri;
 	return "";
 }
 
 std::string MgRequest::httpVersion() const
 {
-	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->http_version;
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->http_version == NULL ? "" : info->http_version;
 	return "";
 }
 
 std::string MgRequest::queryString() const
 {
-	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->query_string;
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->query_string == NULL ? "" : info->query_string;
 	return "";
 }
 
 std::string MgRequest::remoteUser() const
 {
-	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->remote_user;
+	if (mg_request_info *info = mg_get_request_info(m_connection)) return info->remote_user == NULL ? "" : info->remote_user;
 	return "";
 }
 
