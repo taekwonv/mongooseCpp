@@ -8,7 +8,89 @@
  */
 
 #include "MongooseCpp.h"
+#include <unordered_map>
+
 using namespace std;
+
+
+#ifdef __linux__
+#include <linux/spinlock.h>
+
+class SpinLock
+{
+	spinlock_t m_sl;
+
+public:
+	SpinLock(void) { spin_lock_init(&m_sl); }
+	~SpinLock(void){}
+
+	void lock()	{ spin_lock(&m_sl); }
+	void unlock() {	spin_unlock(&m_sl);	}
+};
+
+
+#elif defined _WIN32 || defined _WIN64
+	#if _WIN32_WINN < T0x0403
+		#error for InitializeCriticalSectionAndSpinCount you must define this in project property.
+	#endif
+
+#include <windows.h>
+
+#define SPINLOCK_SPINCOUNT	4000
+
+
+class SpinLock
+{
+	CRITICAL_SECTION m_cs;
+
+public:
+	SpinLock() { InitializeCriticalSectionAndSpinCount(&m_cs, SPINLOCK_SPINCOUNT); }
+	~SpinLock()	{ DeleteCriticalSection(&m_cs); }
+	void lock() { EnterCriticalSection(&m_cs); }
+	void unlock() { LeaveCriticalSection(&m_cs); }
+};
+
+#else
+#error "NOT SUPPORTED TARGET"
+#endif
+
+
+template <class KeyT, class ValT>
+class ObjectMap
+{
+	SpinLock m_lock;
+	unordered_map<KeyT, ValT> m_map;	
+	template <class LockT> struct LocalLock_ { LocalLock_(LockT *l) : m_l(l) { m_l->lock(); } ~LocalLock_() { m_l->unlock(); } LockT *m_l; };
+
+public:
+	void add(KeyT k, ValT v) { LocalLock_<SpinLock> ll(&m_lock); m_map[k] = v; }
+	bool find(KeyT k, ValT &v/*out*/)
+	{
+		LocalLock_<SpinLock> ll(&m_lock);
+		auto it = m_map.find(k);
+		if (it == m_map.end())	return false;
+		v = it->second;
+		return true;
+	}
+	void remove(KeyT k) { LocalLock_<SpinLock> ll(&m_lock); m_map.erase(k); }
+};
+
+static ObjectMap<const mg_connection *, MgRequest *>	s_objMapMgRequest;
+static ObjectMap<const mg_connection *, MgResponse *>	s_objMapMgResponse;
+
+MgRequest *FindMgRequest(const mg_connection *con)
+{
+	MgRequest *req = NULL;
+	s_objMapMgRequest.find(con, req);
+	return req;
+}
+
+MgResponse *FindMgResponse(const mg_connection *con)
+{
+	MgResponse *res = NULL;
+	s_objMapMgResponse.find(con, res);
+	return res;
+}
 
 
 MgServer::MgServer(void) : m_listener(NULL) {}
@@ -26,7 +108,7 @@ MgServer *MongooseCpp::createServer(MongooseCpp::ServerConfig &cfg)
 	};
 	char buf[16];
 	memset(buf, '\0', sizeof(buf));
-	_itoa(cfg.port, buf, 10);
+	_itoa_s(cfg.port, buf, 10);
 	options[3] = buf;
 
 	mg_context *ctx = mg_start(server, server, options);
@@ -179,49 +261,77 @@ int MgServerImpl::member_begin_request(struct mg_connection *con)
 	return 0;
 }
 
-void MgServerImpl::member_end_request(const struct mg_connection *, int reply_status_code)
+void MgServerImpl::member_end_request(const struct mg_connection *con, int reply_status_code)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		req->m_onEndRequest(reply_status_code);
 }
 
-int MgServerImpl::member_log_message(const struct mg_connection *, const char *message)	
+int MgServerImpl::member_log_message(const struct mg_connection *con, const char *message)	
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		return req->m_onLogMessage(message);
 	return 0;
 }
 
-int MgServerImpl::member_websocket_connect(const struct mg_connection *)
+int MgServerImpl::member_websocket_connect(const struct mg_connection *con)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		return req->m_onWebSocketConnect();
 	return 0;
 }
 
-void MgServerImpl::member_websocket_ready(struct mg_connection *)
+void MgServerImpl::member_websocket_ready(struct mg_connection *con)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		req->m_onWebSocketReady();
 }
 
-int MgServerImpl::member_websocket_data(struct mg_connection *, int bits, char *data, size_t data_len)
+int MgServerImpl::member_websocket_data(struct mg_connection *con, int bits, char *data, size_t data_len)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		return req->m_onWebSocketData(bits, data, data_len);
 	return 0;
 }
 
-const char *MgServerImpl::member_open_file(const struct mg_connection *, const char *path, size_t *data_len)
+const char *MgServerImpl::member_open_file(const struct mg_connection *con, const char *path, size_t *data_len)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		return req->m_onOpenFile(path, data_len);
 	return NULL;
 }
 
-void MgServerImpl::member_init_lua(struct mg_connection *, void *lua_context)
+void MgServerImpl::member_init_lua(struct mg_connection *con, void *lua_context)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		req->m_onInitLua(lua_context);
 }
 
-void MgServerImpl::member_upload(struct mg_connection *, const char *file_name)
+void MgServerImpl::member_upload(struct mg_connection *con, const char *file_name)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		req->m_onUpload(file_name);
 }
 
-int MgServerImpl::member_http_error(struct mg_connection *, int status)
+int MgServerImpl::member_http_error(struct mg_connection *con, int status)
 {
+	MgRequest *req = FindMgRequest(con);
+	if (req)
+		return req->m_onHttpError(status);
 	return 0;
 }
 
 int MgServerImpl::s_init_ssl(void *ssl_context, void *user_data)
 {
+	// TODO
 	return 0;
 }
 
@@ -236,6 +346,12 @@ int MgServerImpl::s_init_ssl(void *ssl_context, void *user_data)
 MgResponse::MgResponse(struct mg_connection *con) 
 	: m_connection(con)
 {
+	s_objMapMgResponse.add(m_connection, this);
+}
+
+MgResponse::~MgResponse()
+{
+	s_objMapMgResponse.remove(m_connection);
 }
 
 void MgResponse::setHeader(int statusCode, const char *httpVersion, const char *content_type, unsigned long content_length, const char *transfer_encoding)
@@ -285,6 +401,12 @@ void MgResponse::end()
 MgRequest::MgRequest(mg_connection *con)
 	: m_connection(con)
 {
+	s_objMapMgRequest.add(m_connection, this);
+}
+
+MgRequest::~MgRequest() 
+{
+	s_objMapMgRequest.remove(m_connection);
 }
 
 int MgRequest::read(char *buf, size_t len)

@@ -3,7 +3,8 @@
  *
  *	Cpp Wrapper of mongoose
  *
- *	@author : taekwonv@gmail.com
+ *	@author		taekwonv@gmail.com
+ *	@version	20821.0
  */
 
 #ifndef MONGOOSECPP_H
@@ -33,11 +34,33 @@ public:
 	long remoteIP() const;				// Client's IP address
 	int remotePort() const;				// Client's port
 	int is_ssl() const;					// 1 if SSL-ed, 0 if not
+
+	void onEndRequest(std::function<void(int reply_status_code)> handler) { m_onEndRequest = handler; }
+	void onLogMessage(std::function<int(const char *message)> handler) { m_onLogMessage = handler; }
+	void onWebSocketConnect(std::function<int()> handler) { m_onWebSocketConnect = handler; }
+	void onWebSocketReady(std::function<void()> handler) { m_onWebSocketReady = handler; }
+	void onWebSocketData(std::function<int(int bits, char *data, size_t data_len)> handler) { m_onWebSocketData = handler; }
+	void onOpenFile(std::function<const char *(const char *path, size_t *data_len)> handler) { m_onOpenFile = handler; }
+	void onInitLua(std::function<void(void *lua_context)> handler) { m_onInitLua = handler; }
+	void onUpload(std::function<void(const char *file_name)> handler) { m_onUpload = handler; }
+	void onHttpError(std::function<int(int status)> handler) { m_onHttpError = handler; }
 	
 	MgRequest(mg_connection *con);
+	~MgRequest();
 
 protected:
 	mg_connection *m_connection;
+	
+	friend class MgServerImpl;
+	std::function<void(int reply_status_code)> m_onEndRequest;
+	std::function<int(const char *message)> m_onLogMessage;
+	std::function<int()> m_onWebSocketConnect;
+	std::function<void()> m_onWebSocketReady;
+	std::function<int(int bits, char *data, size_t data_len)> m_onWebSocketData;
+	std::function<const char *(const char *path, size_t *data_len)> m_onOpenFile;
+	std::function<void(void *lua_context)> m_onInitLua;
+	std::function<void(const char *file_name)> m_onUpload;
+	std::function<int(int status)> m_onHttpError;
 
 private:
 	MgRequest() {}
@@ -63,6 +86,7 @@ public:
 	void end();
 
 	MgResponse(struct mg_connection *);
+	~MgResponse();
 
 protected:
 	MgResponse() {}
@@ -91,7 +115,7 @@ public:
 	~MgServer(void);
 
 	void stop();
-	void listen(std::function<int(MgRequest *req, MgResponse *res)> f) { m_listener = f; }
+	void listen(std::function<int(MgRequest *req, MgResponse *res)> onNewRequest) { m_listener = onNewRequest; }
 
 protected:
 	std::function<int(MgRequest *req, MgResponse *res)> m_listener;
