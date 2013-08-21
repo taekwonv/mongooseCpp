@@ -50,6 +50,7 @@ private:
  *	The object of this class is created internally and returned from MgServer::IListener::OnRequest(). All you want to respond to the client may be implemented by using this object.
  *
  */
+
 class MgResponse
 {
 public:	
@@ -82,6 +83,7 @@ protected:
  *	The object of this class is created internally and returned from MongooseCpp::CreateServer(). It represent a HTTP(S) server instance.
  *
  */
+
 class MgServer
 {
 public:
@@ -102,6 +104,7 @@ protected:
  *	The entry point of MongooseCpp.
  *
  */
+
 struct MongooseCpp
 {
 	struct ServerConfig
@@ -130,6 +133,7 @@ struct MongooseCpp
  *	The implementation of MgServer class (Bridge Design Pattern).
  *
  */
+
 class MgServerImpl : public MgServer, 
 	public mg_callbacks
 {
