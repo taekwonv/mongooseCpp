@@ -4,7 +4,7 @@
  *	Cpp Wrapper of mongoose
  *
  *	@author		taekwonv@gmail.com
- *	@version	20821.0
+ *	@version	0.130822
  */
 
 #ifndef MONGOOSECPP_H
