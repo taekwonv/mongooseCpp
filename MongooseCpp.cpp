@@ -365,7 +365,7 @@ void MgResponse::setHeader(int statusCode, const char *httpVersion, const char *
 
 void MgResponse::writeHeader(int statusCode, const char *httpVersion, const char *content_type, unsigned long content_length, const char *transfer_encoding)
 {
-	int ret = mg_printf(m_connection, 
+	mg_printf(m_connection, 
 		"%s %d %s\r\n"
 		"Cache: %s\r\n"
 		"Content-Type: %s\r\n"
@@ -373,14 +373,14 @@ void MgResponse::writeHeader(int statusCode, const char *httpVersion, const char
 		httpVersion, statusCode, 200 == statusCode ? "OK" : "Error",
 		m_cache ? "" : "no-cache",
 		content_type);
-	if (content_length > 0) int ret = mg_printf(m_connection, "Content-Length: %d\r\n", content_length);
-	if (transfer_encoding) int ret = mg_printf(m_connection, "Transfer-Encoding: %s\r\n", transfer_encoding);		
+	if (content_length > 0) mg_printf(m_connection, "Content-Length: %d\r\n", content_length);
+	if (transfer_encoding) mg_printf(m_connection, "Transfer-Encoding: %s\r\n", transfer_encoding);		
 	mg_printf(m_connection, "\r\n");
 }
 
 void MgResponse::write(const std::string &content)
 {
-	int ret = mg_write(m_connection, content.c_str(), content.length());
+	mg_write(m_connection, content.c_str(), content.length());
 }
 
 void MgResponse::end()
