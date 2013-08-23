@@ -239,7 +239,11 @@ MgServerImpl::MgServerImpl()
 	this->begin_request = static_begin_request;
 	this->end_request = static_end_request;
 	this->log_message = static_log_message;
+#ifdef NO_SSL
+	this->init_ssl = NULL;
+#else
 	this->init_ssl = s_init_ssl;
+#endif
 	this->websocket_connect = static_websocket_connect;
 	this->websocket_ready = static_websocket_ready;
 	this->websocket_data = static_websocket_data;
