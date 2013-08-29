@@ -5,6 +5,29 @@
  *
  *	@author		taekwonv@gmail.com
  *	@version	0.130822
+ *
+ *
+ *
+ *	@example code
+
+	 MongooseCpp::ServerConfig cfg;
+	 cfg.document_root	= "html";
+	 #ifdef NO_SSL
+	 cfg.listening_ports = "80"
+	 #else
+	 cfg.listening_ports = "443s"
+	 cfg.ssl_certificate = "cert.pem";
+	 #endif
+	 MgServer *server = MongooseCpp::createServer(cfg);	 
+	 server->listen([](MgRequest *req, MgResponse *res) -> int{
+		cout << req->url() << endl;
+		cout << req->queryString() << endl;
+		res->writeHeader(200, "HTTP/1.1", "text/plain", 0, "");
+		res->write("Hello World!");
+		res->end();
+		return 0;
+	 });
+	 // you may delete 'server' when it exits.
  */
 
 #ifndef MONGOOSECPP_H
@@ -133,9 +156,34 @@ struct MongooseCpp
 {
 	struct ServerConfig
 	{
-		unsigned short port;
+		std::string	cgi_pattern;
+		std::string	cgi_environment;
+		std::string	put_delete_auth_file;
+		std::string	cgi_interpreter;
+		std::string	protect_uri;
+		std::string	authentication_domain;
+		std::string	ssi_pattern;
+		std::string	throttle;
+		std::string	access_log_file;
+		std::string	enable_directory_listing;
+		std::string	error_log_file;
+		std::string	global_auth_file;
+		std::string	index_files;
+		std::string	enable_keep_alive;
+		std::string	access_control_list;
+		std::string	extra_mime_types;
+		std::string	listening_ports;
+		std::string	document_root;
+		std::string	ssl_certificate;
+		std::string	num_threads;
+		std::string	run_as_user;
+		std::string	url_rewrite_patterns;
+		std::string	hide_files_patterns;
+		std::string	request_timeout_ms;
 	};
-	static MgServer *createServer(ServerConfig &cfg);
+	// If mongooseOption is not NULL, cfg will be ingnored. This call is virtually to
+	// call mg_start() of mongoose, mongooseOption will be directly passed to mg_start().
+	static MgServer *createServer(ServerConfig &cfg, const char **mongooseOption = NULL);
 
 	struct RequestInfo
 	{
@@ -180,7 +228,7 @@ public:
 	void member_upload(struct mg_connection *, const char *file_name);
 	int member_http_error(struct mg_connection *, int status);
 	static int s_init_ssl(void *ssl_context, void *user_data);
-
+	
 protected:
 	mg_context *m_ctx;
 };
