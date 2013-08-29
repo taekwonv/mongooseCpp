@@ -9,6 +9,7 @@
 
 #include "MongooseCpp.h"
 #include <unordered_map>
+#include <openssl/ssl.h>
 
 using namespace std;
 
@@ -153,6 +154,15 @@ MgServer *MongooseCpp::createServer(MongooseCpp::ServerConfig &cfg, const char *
 
 MgRequest *MongooseCpp::request(RequestInfo &info)
 {
+	// Since mg_download does not initialize the SSL library, calling mg_download with ssl fails.
+	// To avoid the unexpected, here calls SSL_library_init().
+	if (info.usessl)
+	{
+		static bool s_once = false;
+		if (false == s_once)
+			SSL_library_init();
+	}	
+
 	char errbuf[1024];
 	mg_connection *con = mg_download(info.destAddr.c_str(), info.port, info.usessl ? 1 : 0, errbuf, sizeof(errbuf), 
 		"%s %s %s\r\n"
