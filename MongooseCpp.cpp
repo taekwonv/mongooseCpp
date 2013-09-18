@@ -15,18 +15,17 @@ using namespace std;
 
 
 #ifdef __linux__
-#include <linux/spinlock.h>
+
+#define __noop (void)0
 
 class SpinLock
-{
-	spinlock_t m_sl;
-
+{	
 public:
-	SpinLock(void) { spin_lock_init(&m_sl); }
+	SpinLock(void) { /*TODO*/ }
 	~SpinLock(void){}
 
-	void lock()	{ spin_lock(&m_sl); }
-	void unlock() {	spin_unlock(&m_sl);	}
+	void lock()	{ /*TODO*/ }
+	void unlock() {	/*TODO*/ }
 };
 
 
@@ -113,30 +112,30 @@ MgServer *MongooseCpp::createServer(MongooseCpp::ServerConfig &cfg, const char *
 	if (NULL == mongooseOption)
 	{
 		int i = 0;
-		cfg.cgi_pattern.length() > 0 ? options[i++] = "cgi_pattern", options[i++] = cfg.cgi_pattern.c_str() : __noop;
-		cfg.cgi_environment.length() > 0 ? options[i++]  = "cgi_environment", options[i++] =  cfg.cgi_environment.c_str() : __noop;
-		cfg.put_delete_auth_file.length() > 0 ? options[i++]  = "put_delete_auth_file", options[i++] =  cfg.put_delete_auth_file.c_str() : __noop;
-		cfg.cgi_interpreter.length() > 0 ? options[i++]  = "cgi_interpreter", options[i++] =  cfg.cgi_interpreter.c_str() : __noop;
-		cfg.protect_uri.length() > 0 ? options[i++]  = "protect_uri", options[i++] =  cfg.protect_uri.c_str() : __noop;
-		cfg.authentication_domain.length() > 0 ? options[i++]  = "authentication_domain", options[i++] =  cfg.authentication_domain.c_str() : __noop;
-		cfg.ssi_pattern.length() > 0 ? options[i++]  = "ssi_pattern", options[i++] =  cfg.ssi_pattern.c_str() : __noop;
-		cfg.throttle.length() > 0 ? options[i++]  = "throttle", options[i++] =  cfg.throttle.c_str() : __noop;
-		cfg.access_log_file.length() > 0 ? options[i++]  = "access_log_file", options[i++] =  cfg.access_log_file.c_str() : __noop;
-		cfg.enable_directory_listing.length() > 0 ? options[i++]  = "enable_directory_listing", options[i++] =  cfg.enable_directory_listing.c_str() : __noop;
-		cfg.error_log_file.length() > 0 ? options[i++]  = "error_log_file", options[i++] =  cfg.error_log_file.c_str() : __noop;
-		cfg.global_auth_file.length() > 0 ? options[i++]  = "global_auth_file", options[i++] =  cfg.global_auth_file.c_str() : __noop;
-		cfg.index_files.length() > 0 ? options[i++]  = "index_files", options[i++] =  cfg.index_files.c_str() : __noop;
-		cfg.enable_keep_alive.length() > 0 ? options[i++]  = "enable_keep_alive", options[i++] =  cfg.enable_keep_alive.c_str() : __noop;
-		cfg.access_control_list.length() > 0 ? options[i++]  = "access_control_list", options[i++] =  cfg.access_control_list.c_str() : __noop;
-		cfg.extra_mime_types.length() > 0 ? options[i++]  = "extra_mime_types", options[i++] =  cfg.extra_mime_types.c_str() : __noop;
-		cfg.listening_ports.length() > 0 ? options[i++]  = "listening_ports", options[i++] =  cfg.listening_ports.c_str() : __noop;
-		cfg.document_root.length() > 0 ? options[i++]  = "document_root", options[i++] =  cfg.document_root.c_str() : __noop;
-		cfg.ssl_certificate.length() > 0 ? options[i++]  = "ssl_certificate", options[i++] =  cfg.ssl_certificate.c_str() : __noop;
-		cfg.num_threads.length() > 0 ? options[i++]  = "num_threads", options[i++] =  cfg.num_threads.c_str() : __noop;
-		cfg.run_as_user.length() > 0 ? options[i++]  = "run_as_user", options[i++] =  cfg.run_as_user.c_str() : __noop;
-		cfg.url_rewrite_patterns.length() > 0 ? options[i++]  = "url_rewrite_patterns", options[i++] =  cfg.url_rewrite_patterns.c_str() : __noop;
-		cfg.hide_files_patterns.length() > 0 ? options[i++]  = "hide_files_patterns", options[i++] =  cfg.hide_files_patterns.c_str() : __noop;
-		cfg.request_timeout_ms.length() > 0 ? options[i++]  = "request_timeout_ms", options[i++] =  cfg.request_timeout_ms.c_str() : __noop;
+		cfg.cgi_pattern.length() > 0 ? options[i++] = "cgi_pattern", options[i++] = cfg.cgi_pattern.c_str() : "";
+		cfg.cgi_environment.length() > 0 ? options[i++]  = "cgi_environment", options[i++] =  cfg.cgi_environment.c_str() : "";
+		cfg.put_delete_auth_file.length() > 0 ? options[i++]  = "put_delete_auth_file", options[i++] =  cfg.put_delete_auth_file.c_str() : "";
+		cfg.cgi_interpreter.length() > 0 ? options[i++]  = "cgi_interpreter", options[i++] =  cfg.cgi_interpreter.c_str() : "";
+		cfg.protect_uri.length() > 0 ? options[i++]  = "protect_uri", options[i++] =  cfg.protect_uri.c_str() : "";
+		cfg.authentication_domain.length() > 0 ? options[i++]  = "authentication_domain", options[i++] =  cfg.authentication_domain.c_str() : "";
+		cfg.ssi_pattern.length() > 0 ? options[i++]  = "ssi_pattern", options[i++] =  cfg.ssi_pattern.c_str() : "";
+		cfg.throttle.length() > 0 ? options[i++]  = "throttle", options[i++] =  cfg.throttle.c_str() : "";
+		cfg.access_log_file.length() > 0 ? options[i++]  = "access_log_file", options[i++] =  cfg.access_log_file.c_str() : "";
+		cfg.enable_directory_listing.length() > 0 ? options[i++]  = "enable_directory_listing", options[i++] =  cfg.enable_directory_listing.c_str() : "";
+		cfg.error_log_file.length() > 0 ? options[i++]  = "error_log_file", options[i++] =  cfg.error_log_file.c_str() : "";
+		cfg.global_auth_file.length() > 0 ? options[i++]  = "global_auth_file", options[i++] =  cfg.global_auth_file.c_str() : "";
+		cfg.index_files.length() > 0 ? options[i++]  = "index_files", options[i++] =  cfg.index_files.c_str() : "";
+		cfg.enable_keep_alive.length() > 0 ? options[i++]  = "enable_keep_alive", options[i++] =  cfg.enable_keep_alive.c_str() : "";
+		cfg.access_control_list.length() > 0 ? options[i++]  = "access_control_list", options[i++] =  cfg.access_control_list.c_str() : "";
+		cfg.extra_mime_types.length() > 0 ? options[i++]  = "extra_mime_types", options[i++] =  cfg.extra_mime_types.c_str() : "";
+		cfg.listening_ports.length() > 0 ? options[i++]  = "listening_ports", options[i++] =  cfg.listening_ports.c_str() : "";
+		cfg.document_root.length() > 0 ? options[i++]  = "document_root", options[i++] =  cfg.document_root.c_str() : "";
+		cfg.ssl_certificate.length() > 0 ? options[i++]  = "ssl_certificate", options[i++] =  cfg.ssl_certificate.c_str() : "";
+		cfg.num_threads.length() > 0 ? options[i++]  = "num_threads", options[i++] =  cfg.num_threads.c_str() : "";
+		cfg.run_as_user.length() > 0 ? options[i++]  = "run_as_user", options[i++] =  cfg.run_as_user.c_str() : "";
+		cfg.url_rewrite_patterns.length() > 0 ? options[i++]  = "url_rewrite_patterns", options[i++] =  cfg.url_rewrite_patterns.c_str() : "";
+		cfg.hide_files_patterns.length() > 0 ? options[i++]  = "hide_files_patterns", options[i++] =  cfg.hide_files_patterns.c_str() : "";
+		cfg.request_timeout_ms.length() > 0 ? options[i++]  = "request_timeout_ms", options[i++] =  cfg.request_timeout_ms.c_str() : "";
 		options[i] = NULL;
 	}
 
@@ -262,13 +261,6 @@ static void static_upload(struct mg_connection *con, const char *file_name)
 	return server->member_upload(con, file_name);
 }
 
-static int static_http_error(struct mg_connection *con, int status) 
-{
-	mg_request_info *info = mg_get_request_info(con);
-	MgServerImpl *server = reinterpret_cast<MgServerImpl *>(info->user_data);
-	if (NULL == server) return 0; 
-	return server->member_http_error(con, status);
-}
 
 MgServerImpl::MgServerImpl()
 	: m_ctx(NULL)
@@ -288,7 +280,6 @@ MgServerImpl::MgServerImpl()
 	this->open_file = static_open_file;
 	this->init_lua = static_init_lua;
 	this->upload = static_upload;
-	this->http_error = static_http_error;
 }
 
 int MgServerImpl::member_begin_request(struct mg_connection *con)
@@ -361,14 +352,6 @@ void MgServerImpl::member_upload(struct mg_connection *con, const char *file_nam
 	MgRequest *req = FindMgRequest(con);
 	if (req)
 		req->m_onUpload(file_name);
-}
-
-int MgServerImpl::member_http_error(struct mg_connection *con, int status)
-{
-	MgRequest *req = FindMgRequest(con);
-	if (req)
-		return req->m_onHttpError(status);
-	return 0;
 }
 
 int MgServerImpl::s_init_ssl(void *ssl_context, void *user_data)

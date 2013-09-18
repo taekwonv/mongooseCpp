@@ -36,6 +36,7 @@
 #include "../mongoose/mongoose.h"
 #include <functional>
 #include <memory>
+#include <string>
 
 
 /**
@@ -66,7 +67,6 @@ public:
 	void onOpenFile(std::function<const char *(const char *path, size_t *data_len)> handler) { m_onOpenFile = handler; }
 	void onInitLua(std::function<void(void *lua_context)> handler) { m_onInitLua = handler; }
 	void onUpload(std::function<void(const char *file_name)> handler) { m_onUpload = handler; }
-	void onHttpError(std::function<int(int status)> handler) { m_onHttpError = handler; }
 	
 	MgRequest(mg_connection *con);
 	~MgRequest();
@@ -83,7 +83,6 @@ protected:
 	std::function<const char *(const char *path, size_t *data_len)> m_onOpenFile;
 	std::function<void(void *lua_context)> m_onInitLua;
 	std::function<void(const char *file_name)> m_onUpload;
-	std::function<int(int status)> m_onHttpError;
 
 private:
 	MgRequest() {}
@@ -226,7 +225,6 @@ public:
 	const char * member_open_file(const struct mg_connection *, const char *path, size_t *data_len);
 	void member_init_lua(struct mg_connection *, void *lua_context);
 	void member_upload(struct mg_connection *, const char *file_name);
-	int member_http_error(struct mg_connection *, int status);
 	static int s_init_ssl(void *ssl_context, void *user_data);
 	
 protected:
