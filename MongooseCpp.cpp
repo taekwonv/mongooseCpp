@@ -265,6 +265,7 @@ static void static_upload(struct mg_connection *con, const char *file_name)
 MgServerImpl::MgServerImpl()
 	: m_ctx(NULL)
 {
+	memset(dynamic_cast<mg_callbacks *>(this), 0, sizeof(mg_callbacks));
 	// map callbacks to member funcs		
 	this->begin_request = static_begin_request;
 	this->end_request = static_end_request;
@@ -280,6 +281,8 @@ MgServerImpl::MgServerImpl()
 	this->open_file = static_open_file;
 	this->init_lua = static_init_lua;
 	this->upload = static_upload;
+	this->thread_start = s_thread_start;
+	this->thread_stop = s_thread_stop;
 }
 
 int MgServerImpl::member_begin_request(struct mg_connection *con)
@@ -362,6 +365,29 @@ int MgServerImpl::s_init_ssl(void *ssl_context, void *user_data)
 	// set up certificate itself. In this case, skip sertificate setting.
 	return 0;
 }
+
+void MgServerImpl::s_thread_start(void *user_data, void **conn_data)
+{
+	// Called at the beginning of mongoose's thread execution in the context of
+	// that thread. To be used to perform any extra per-thread initialization.
+	// Parameters:
+	//  user_data: pointer passed to mg_start
+	//  conn_data: per-connection, i.e. per-thread pointer. Can be used to
+	//             store per-thread data, for example, database connection
+	//             handles. Persistent between connections handled by the
+	//             same thread.
+	//             NOTE: this parameter is NULL for master thread, and non-NULL
+	//             for worker threads.
+}
+
+void MgServerImpl::s_thread_stop(void *user_data, void **conn_data)
+{
+	// Called when mongoose's thread is about to terminate.
+	// Same as thread_start() callback, but called when thread is about to be
+	// destroyed. Used to cleanup the state initialized by thread_start().
+	// Parameters: see thread_start().
+}
+
 
 
 /**

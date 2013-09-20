@@ -226,6 +226,8 @@ public:
 	void member_init_lua(struct mg_connection *, void *lua_context);
 	void member_upload(struct mg_connection *, const char *file_name);
 	static int s_init_ssl(void *ssl_context, void *user_data);
+	static void s_thread_start(void *user_data, void **conn_data);
+	static void s_thread_stop(void *user_data, void **conn_data);
 	
 protected:
 	mg_context *m_ctx;
