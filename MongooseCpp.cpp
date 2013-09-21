@@ -287,20 +287,18 @@ MgServerImpl::MgServerImpl()
 
 int MgServerImpl::member_begin_request(struct mg_connection *con)
 {
-	if (m_listener)
-	{
-		mg_request_info *info = mg_get_request_info(con);
-		MgResponse *res = new MgResponse(con);
-		MgRequest *req = new MgRequest(con);
+	MgRequest *req = FindMgRequest(con);
+	MgResponse *res = FindMgResponse(con);
+
+	if (m_listener && req && res)
 		return m_listener(req, res);
-	}
 	return 0;
 }
 
 void MgServerImpl::member_end_request(const struct mg_connection *con, int reply_status_code)
 {
 	MgRequest *req = FindMgRequest(con);
-	if (req)
+	if (req && req->m_onEndRequest)
 		req->m_onEndRequest(reply_status_code);
 }
 
@@ -308,7 +306,7 @@ int MgServerImpl::member_log_message(const struct mg_connection *con, const char
 {
 	MgRequest *req = FindMgRequest(con);
 	if (req)
-		return req->m_onLogMessage(message);
+		return req->m_onLogMessage ? req->m_onLogMessage(message) : 0;
 	return 0;
 }
 
@@ -316,14 +314,14 @@ int MgServerImpl::member_websocket_connect(const struct mg_connection *con)
 {
 	MgRequest *req = FindMgRequest(con);
 	if (req)
-		return req->m_onWebSocketConnect();
+		return req->m_onWebSocketConnect ? req->m_onWebSocketConnect() : 0;
 	return 0;
 }
 
 void MgServerImpl::member_websocket_ready(struct mg_connection *con)
 {
 	MgRequest *req = FindMgRequest(con);
-	if (req)
+	if (req && req->m_onWebSocketReady)
 		req->m_onWebSocketReady();
 }
 
@@ -331,29 +329,34 @@ int MgServerImpl::member_websocket_data(struct mg_connection *con, int bits, cha
 {
 	MgRequest *req = FindMgRequest(con);
 	if (req)
-		return req->m_onWebSocketData(bits, data, data_len);
+		return req->m_onWebSocketData ? req->m_onWebSocketData(bits, data, data_len) : 0;
 	return 0;
 }
 
 const char *MgServerImpl::member_open_file(const struct mg_connection *con, const char *path, size_t *data_len)
 {
 	MgRequest *req = FindMgRequest(con);
-	if (req)
-		return req->m_onOpenFile(path, data_len);
-	return NULL;
+	MgResponse *res = FindMgResponse(con);
+
+	if (!req)
+		req = new MgRequest(const_cast<mg_connection *>(con));
+	if (!res)
+		res = new MgResponse(const_cast<mg_connection *>(con));
+	
+	return req->m_onOpenFile ? req->m_onOpenFile(path, data_len) : NULL;
 }
 
 void MgServerImpl::member_init_lua(struct mg_connection *con, void *lua_context)
 {
 	MgRequest *req = FindMgRequest(con);
-	if (req)
+	if (req && req->m_onInitLua)
 		req->m_onInitLua(lua_context);
 }
 
 void MgServerImpl::member_upload(struct mg_connection *con, const char *file_name)
 {
 	MgRequest *req = FindMgRequest(con);
-	if (req)
+	if (req && req->m_onUpload)
 		req->m_onUpload(file_name);
 }
 
